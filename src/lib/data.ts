@@ -1,4 +1,4 @@
-import type { ManifestationChoice } from '../data/regimento';
+import { devices, type ManifestationChoice } from '../data';
 
 export type ResidentRole = 'owner' | 'tenant';
 export type Participant = { name:string; tower:'A'|'B'|'C'|'D'; apartment:string; role:ResidentRole };
@@ -20,6 +20,7 @@ const PARTICIPANT_KEY='torres-em-comum:participant';
 const SESSION_KEY='torres-em-comum:remote-session';
 const RECEIPT_KEY='torres-em-comum:final-receipt';
 const API_URL='https://hzcpbbnjoeyyfwxdsbxt.supabase.co/functions/v1/participation';
+const DEVICE_MANIFEST=[...new Set(devices.map(device=>device.id))].sort();
 
 export function loadResponses():Responses{try{return JSON.parse(localStorage.getItem(RESPONSE_KEY)||'{}')}catch{return {}}}
 export function saveResponses(value:Responses){localStorage.setItem(RESPONSE_KEY,JSON.stringify(value))}
@@ -35,8 +36,8 @@ async function api<T>(payload:Record<string,unknown>):Promise<T>{const response=
 
 export async function createRemoteDraft(participant:Participant):Promise<RemoteSession>{const result=await api<any>({action:'create',...participant});const session:RemoteSession={participantId:result.participantId,protocolId:result.protocolId,resumeToken:result.resumeToken,status:'draft',lastSavedAt:result.lastSavedAt};saveRemoteSession(session);saveFinalReceipt(null);return session}
 export async function resumeRemoteDraft(session:RemoteSession):Promise<{participant:Participant;responses:Responses;lastSavedAt?:string}>{const result=await api<any>({action:'resume',participantId:session.participantId,resumeToken:session.resumeToken});const responses:Responses=Object.fromEntries((result.responses||[]).map((r:any)=>[r.device_id,{choice:r.choice,comment:r.comment||undefined}]));return{participant:{name:result.participant.name,tower:result.participant.tower,apartment:result.participant.apartment,role:result.participant.role},responses,lastSavedAt:result.participant.lastSavedAt}}
-export async function saveRemoteDraft(session:RemoteSession,responses:Responses):Promise<string>{const result=await api<any>({action:'save',participantId:session.participantId,resumeToken:session.resumeToken,responses:serializeResponses(responses)});return result.lastSavedAt}
-export async function finalizeRemoteDraft(session:RemoteSession,responses:Responses):Promise<FinalReceipt>{const result=await api<any>({action:'finalize',participantId:session.participantId,resumeToken:session.resumeToken,responses:serializeResponses(responses)});const receipt:FinalReceipt={protocolId:result.protocolId,status:result.status,finalizedAt:result.finalizedAt,payloadHash:result.payloadHash,countsInPanel:result.countsInPanel===true,conflict:result.conflict||null};saveFinalReceipt(receipt);saveRemoteSession({...session,status:result.status});return receipt}
+export async function saveRemoteDraft(session:RemoteSession,responses:Responses):Promise<string>{const result=await api<any>({action:'save',participantId:session.participantId,resumeToken:session.resumeToken,deviceManifest:DEVICE_MANIFEST,responses:serializeResponses(responses)});return result.lastSavedAt}
+export async function finalizeRemoteDraft(session:RemoteSession,responses:Responses):Promise<FinalReceipt>{const result=await api<any>({action:'finalize',participantId:session.participantId,resumeToken:session.resumeToken,deviceManifest:DEVICE_MANIFEST,responses:serializeResponses(responses)});const receipt:FinalReceipt={protocolId:result.protocolId,status:result.status,finalizedAt:result.finalizedAt,payloadHash:result.payloadHash,countsInPanel:result.countsInPanel===true,conflict:result.conflict||null};saveFinalReceipt(receipt);saveRemoteSession({...session,status:result.status});return receipt}
 export async function loadPublicPanel():Promise<PublicPanel>{return api<PublicPanel>({action:'panel'})}
 
 export const backendStatus={mode:'central' as const,label:'Banco central protegido · dados públicos somente com k ≥ 5'};
