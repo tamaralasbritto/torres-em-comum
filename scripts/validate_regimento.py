@@ -1,4 +1,5 @@
 from pathlib import Path
+import hashlib
 import re
 import sys
 
@@ -28,4 +29,7 @@ if errors:
     print('\n'.join(errors), file=sys.stderr)
     sys.exit(1)
 
+canonical = '\n'.join(sorted(ids)).encode('utf-8')
+manifest_hash = hashlib.sha256(canonical).hexdigest()
 print(f'OK: {len(ids)} dispositivos únicos cobrindo todos os artigos 1-209 em {len(files)} arquivos.')
+print(f'DEVICE_MANIFEST_SHA256={manifest_hash}')
