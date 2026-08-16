@@ -10,5 +10,5 @@ const isAdminRoute=hash==='#admin'||hash.includes('access_token=')||hash.include
 if(isAdminRoute){
   ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><AdminPanel/></React.StrictMode>);
 }else{
-  import('./main');
+  import('./topicMain');
 }
