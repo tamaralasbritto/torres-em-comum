@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles.css';
-import { devices, type ManifestationChoice } from './data/regimento';
+import { devices, type ManifestationChoice } from './data';
 import { backendStatus, loadAggregate, loadParticipant, loadResponses, saveParticipant, saveResponses, type Participant, type Responses } from './lib/data';
 
 const OFFICE_EMAIL='tercio@tercioguilhermeadv.com';
