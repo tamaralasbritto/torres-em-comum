@@ -8,6 +8,10 @@ const hash=window.location.hash;
 const isAdminRoute=hash==='#admin'||hash.includes('access_token=')||hash.includes('error_description=');
 const isGlossaryRoute=hash==='#glossario';
 
+// The app has lightweight hash routes for admin and glossary. Reloading on a
+// hash-route change makes the entrypoint re-evaluate which screen must mount.
+window.addEventListener('hashchange',()=>window.location.reload());
+
 if(isAdminRoute){
   ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><AdminPanel/></React.StrictMode>);
 }else if(isGlossaryRoute){
