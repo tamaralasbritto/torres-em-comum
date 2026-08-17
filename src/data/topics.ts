@@ -8,12 +8,16 @@ export type DecisionTopic = {
   deviceIds:string[];
 };
 
-const byRange=(from:number,to:number,filter?:(d:Device)=>boolean)=>devices.filter(d=>d.article>=from&&d.article<=to&&(!filter||filter(d))).map(d=>d.id);
-const byTheme=(theme:string)=>devices.filter(d=>d.theme===theme).map(d=>d.id);
+const isGlossary=(d:Device)=>d.theme==='Definições';
+export const glossaryDevices=devices.filter(isGlossary);
+const votableDevices=devices.filter(d=>!isGlossary(d));
+const byRange=(from:number,to:number,filter?:(d:Device)=>boolean)=>votableDevices.filter(d=>d.article>=from&&d.article<=to&&(!filter||filter(d))).map(d=>d.id);
+const byTheme=(theme:string)=>votableDevices.filter(d=>d.theme===theme).map(d=>d.id);
 const merge=(...parts:string[][])=>[...new Set(parts.flat())];
 
 export const decisionTopics:DecisionTopic[]=[
-  {id:'base-definicoes',category:'Regras gerais',title:'Quem é quem e como o regimento funciona',summary:'Define termos como condômino, inquilino, visitante, área comum e área privativa e estabelece quais normas regem o condomínio.',deviceIds:byRange(1,3)},
+  {id:'regencia',category:'Regras gerais',title:'Quais normas regem o condomínio',summary:'Define quais leis, documentos internos e decisões de assembleia devem ser observados no condomínio.',deviceIds:byRange(1,1)},
+  {id:'finalidade-regimento',category:'Regras gerais',title:'Finalidade do Regimento Interno',summary:'Define o objetivo declarado do Regimento e os valores que orientam suas regras de convivência.',deviceIds:byRange(2,2)},
   {id:'direitos',category:'Regras gerais',title:'Direitos dos moradores e proprietários',summary:'Reúne os direitos de usar a unidade e as áreas comuns, participar de assembleias, consultar documentos e questionar a administração.',deviceIds:byRange(4,5)},
   {id:'deveres',category:'Regras gerais',title:'Deveres dos moradores e proprietários',summary:'Trata de obrigações como comunicar mudanças de titularidade, manter dados atualizados, contribuir com despesas e permitir acessos indispensáveis.',deviceIds:byRange(6,6)},
   {id:'proibicoes-gerais',category:'Regras gerais',title:'Proibições gerais de uso e convivência',summary:'Agrupa restrições sobre uso não residencial, fachada, objetos em corredores, segurança, funcionários e recursos coletivos.',deviceIds:byRange(7,7)},
