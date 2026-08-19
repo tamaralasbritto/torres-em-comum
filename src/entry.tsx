@@ -31,6 +31,12 @@ if(isAdminRoute){
   ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><AdminPanel/></React.StrictMode>);
 }else if(isGlossaryRoute){
   import('./glossary').then(({Glossary})=>ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><Glossary/></React.StrictMode>));
-}else{
+}else if(!recoverFinalizedManifestation()){
   import('./topicMain').catch(()=>{if(!recoverFinalizedManifestation()){const root=document.getElementById('root');if(root)root.innerHTML='<main style="padding:2rem;font-family:sans-serif"><h1>Não foi possível carregar a consulta.</h1><p>Atualize a página e tente novamente.</p></main>'}});
+  const receiptWatcher=window.setInterval(()=>{
+    if(localStorage.getItem(FINAL_RECEIPT_KEY)){
+      window.clearInterval(receiptWatcher);
+      recoverFinalizedManifestation();
+    }
+  },300);
 }
