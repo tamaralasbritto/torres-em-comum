@@ -1,4 +1,3 @@
-const OFFICE_EMAIL='tercio@tercioguilhermeadv.com';
 const PARTICIPANT_KEY='torres-em-comum:participant';
 const RECEIPT_KEY='torres-em-comum:final-receipt';
 
@@ -67,7 +66,7 @@ function ensureFinalDocument(){
   const printButton=[...review.querySelectorAll('button')].find(b=>/Imprimir|salvar PDF/i.test(b.textContent||''));
   if(printButton)printButton.textContent='Gerar / salvar manifestação em PDF';
   const emailButton=[...review.querySelectorAll('button')].find(b=>/Abrir e-mail|Enviar ao escritório/i.test(b.textContent||''));
-  if(emailButton)emailButton.textContent='Abrir e-mail para envio';
+  if(emailButton)emailButton.textContent='Abrir e-mail no navegador →';
 }
 
 function disablePublicResults(){
@@ -81,24 +80,9 @@ function disablePublicResults(){
   section.innerHTML=`<div class="mvp-results-placeholder"><p class="eyebrow">RESULTADOS</p><h2>Ainda não temos dados suficientes.</h2><p>Os resultados públicos serão disponibilizados quando houver volume mínimo de respostas para exibição com segurança e privacidade.</p></div>`;
 }
 
-function escapeHtml(value:string){return value.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]||c))}
-
-function interceptEmail(event:Event){
-  const target=(event.target as HTMLElement|null)?.closest('button');
-  if(!target||!/Abrir e-mail para envio|Abrir e-mail|Enviar ao escritório/i.test(target.textContent||''))return;
-  const receipt=readJson<Receipt>(RECEIPT_KEY);
-  const participant=readJson<Participant>(PARTICIPANT_KEY);
-  if(!receipt||!participant)return;
-  event.preventDefault();
-  event.stopPropagation();
-  if('stopImmediatePropagation' in event)(event as any).stopImmediatePropagation();
-  const subject=`Manifestação sobre o Regimento Interno — Torre ${participant.tower} / Apto. ${participant.apartment}`;
-  const body=`Prezados,\n\nSeguem, em anexo, minhas considerações a respeito da proposta de Regimento Interno do Condomínio Torres de Olinda.\n\nAtenciosamente,\n${participant.name}\nTorre ${participant.tower} — Apartamento ${participant.apartment}`;
-  window.location.href=`mailto:${OFFICE_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-}
+function escapeHtml(value:string){return value.replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]||c))}
 
 addPrintStyles();
-document.addEventListener('click',interceptEmail,true);
 const observer=new MutationObserver(()=>{ensureFinalDocument();disablePublicResults()});
 observer.observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
 ensureFinalDocument();
