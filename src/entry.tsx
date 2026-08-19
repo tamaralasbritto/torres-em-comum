@@ -17,13 +17,28 @@ const RECEIPT_URL='https://hzcpbbnjoeyyfwxdsbxt.supabase.co/functions/v1/partici
 
 window.addEventListener('hashchange',()=>window.location.reload());
 
-const goToReceipt=()=>{
-  if(window.location.search.includes('receipt=1'))return;
-  window.location.replace(`${window.location.origin}/?receipt=1`);
+const showReceiptError=()=>{
+  const root=document.getElementById('root');
+  if(root)root.innerHTML='<main style="padding:2rem;font-family:sans-serif"><h1>Não foi possível abrir o comprovante.</h1><p>Sua manifestação pode já ter sido registrada. Volte à consulta e tente abrir o resumo novamente.</p></main>';
 };
 
-const recoverReceiptFromBackend=async()=>{
-  if(localStorage.getItem(FINAL_RECEIPT_KEY)){goToReceipt();return true}
+const renderReceipt=async()=>{
+  try{
+    const {renderFinalRecovery}=await import('./finalRecovery');
+    renderFinalRecovery();
+    return true;
+  }catch{
+    showReceiptError();
+    return false;
+  }
+};
+
+const goToReceipt=()=>{
+  if(isReceiptRoute)return;
+  window.location.replace('/?receipt=1');
+};
+
+const fetchReceiptIntoLocal=async()=>{
   let session:any=null;
   try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{return false}
   if(!session?.participantId||!session?.resumeToken)return false;
@@ -34,16 +49,15 @@ const recoverReceiptFromBackend=async()=>{
     if(!receipt?.ready)return false;
     localStorage.setItem(FINAL_RECEIPT_KEY,JSON.stringify({protocolId:receipt.protocolId,status:receipt.status,finalizedAt:receipt.finalizedAt,payloadHash:receipt.payloadHash,countsInPanel:receipt.countsInPanel===true,conflict:receipt.conflict||null}));
     localStorage.setItem(SESSION_KEY,JSON.stringify({...session,status:receipt.status}));
-    goToReceipt();
     return true;
   }catch{return false}
 };
 
 if(isReceiptRoute){
-  import('./finalRecovery').then(({renderFinalRecovery})=>renderFinalRecovery()).catch(()=>{
-    const root=document.getElementById('root');
-    if(root)root.innerHTML='<main style="padding:2rem;font-family:sans-serif"><h1>Não foi possível abrir o comprovante.</h1><p>Atualize a página e tente novamente.</p></main>';
-  });
+  void (async()=>{
+    if(!localStorage.getItem(FINAL_RECEIPT_KEY))await fetchReceiptIntoLocal();
+    await renderReceipt();
+  })();
 }else if(isAdminRoute){
   ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><AdminHome/></React.StrictMode>);
 }else if(isValidatorRoute){
@@ -66,9 +80,12 @@ if(isReceiptRoute){
     const finalizing=Array.from(document.querySelectorAll('button')).some(button=>button.textContent?.includes('Finalizando'));
     if(finalizing&&!checking){
       checking=true;
-      const recovered=await recoverReceiptFromBackend();
+      const recovered=await fetchReceiptIntoLocal();
       checking=false;
-      if(recovered)window.clearInterval(receiptWatcher);
+      if(recovered){
+        window.clearInterval(receiptWatcher);
+        goToReceipt();
+      }
     }
-  },400);
+  },500);
 }
