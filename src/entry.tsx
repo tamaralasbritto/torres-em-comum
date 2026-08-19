@@ -41,6 +41,63 @@ const renderReceiptError=(message:string)=>{
   document.getElementById('receipt-retry')?.addEventListener('click',()=>window.location.reload());
 };
 
+const emailContent=(participant:any,participantName:string)=>{
+  const subject=participant?`Manifestação sobre o Regimento Interno — Torre ${participant.tower} / Apto. ${participant.apartment}`:'Manifestação sobre o Regimento Interno — Torres de Olinda';
+  const body=`Prezados,\n\nSeguem, em anexo, minhas considerações a respeito da proposta de Regimento Interno do Condomínio Torres de Olinda.\n\nAtenciosamente,\n${participantName}${participant?`\nTorre ${participant.tower} — Apartamento ${participant.apartment}`:''}`;
+  return {subject,body};
+};
+
+const openWebmailDialog=(participant:any,participantName:string)=>{
+  document.getElementById('webmail-dialog')?.remove();
+  const dialog=document.createElement('dialog');
+  dialog.id='webmail-dialog';
+  dialog.className='webmail-dialog';
+  dialog.innerHTML=`
+    <form method="dialog" class="webmail-card">
+      <p class="webmail-eyebrow">ENVIAR MANIFESTAÇÃO</p>
+      <h2>Onde você quer abrir o e-mail?</h2>
+      <p class="webmail-copy">O destinatário, o assunto e o texto já vão preenchidos. Depois, é só anexar o PDF que você salvou.</p>
+      <div class="webmail-options">
+        <button type="button" data-webmail="gmail">Abrir no Gmail →</button>
+        <button type="button" data-webmail="outlook">Abrir no Outlook / Hotmail →</button>
+        <button type="button" class="secondary" data-webmail="copy">Copiar texto do e-mail</button>
+      </div>
+      <button class="webmail-close" value="cancel">Cancelar</button>
+      <p class="webmail-status" aria-live="polite"></p>
+    </form>`;
+  document.body.appendChild(dialog);
+  dialog.addEventListener('click',async(event)=>{
+    const target=event.target as Element|null;
+    const button=target?.closest<HTMLButtonElement>('[data-webmail]');
+    if(!button)return;
+    const {subject,body}=emailContent(participant,participantName);
+    if(button.dataset.webmail==='gmail'){
+      const url=`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(OFFICE_EMAIL)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(url,'_blank','noopener,noreferrer');
+      dialog.close();
+      return;
+    }
+    if(button.dataset.webmail==='outlook'){
+      const url=`https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(OFFICE_EMAIL)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.open(url,'_blank','noopener,noreferrer');
+      dialog.close();
+      return;
+    }
+    if(button.dataset.webmail==='copy'){
+      const full=`Para: ${OFFICE_EMAIL}\nAssunto: ${subject}\n\n${body}`;
+      const status=dialog.querySelector<HTMLElement>('.webmail-status');
+      try{
+        await navigator.clipboard.writeText(full);
+        if(status)status.textContent='Texto copiado.';
+      }catch{
+        if(status)status.textContent='Não foi possível copiar automaticamente.';
+      }
+    }
+  });
+  if(typeof dialog.showModal==='function')dialog.showModal();
+  else dialog.setAttribute('open','');
+};
+
 const renderReceiptStatic=()=>{
   const root=document.getElementById('root');
   if(!root)return false;
@@ -57,14 +114,10 @@ const renderReceiptStatic=()=>{
   const conflict=receipt.status==='conflicted'?'<div class="receipt-warning"><strong>Aguardando validação da unidade.</strong><br>Há outra manifestação associada a esta unidade. Os registros foram preservados e ficam fora da contagem pública até a validação.</div>':'';
   const finalizedAt=receipt.finalizedAt?new Date(receipt.finalizedAt).toLocaleString('pt-BR'):'—';
 
-  root.innerHTML=receiptShell(`<section class="receipt-card"><p class="receipt-eyebrow">MANIFESTAÇÃO FINALIZADA</p><h1 class="receipt-title">Seu comprovante está pronto.</h1>${conflict}<div class="receipt-grid"><strong>Responsável informado</strong><span>${esc(participantName)}</span><strong>Vínculo declarado</strong><span>${esc(participantRole)}</span><strong>Unidade</strong><span>${esc(unit)}</span><strong>Protocolo</strong><code>${esc(receipt.protocolId)}</code><strong>Data e hora do registro</strong><span>${esc(finalizedAt)}</span><strong>Hash de integridade</strong><code>${esc(receipt.payloadHash)}</code></div>${items}<p class="receipt-note">Para os demais termos da minuta, não houve manifestações específicas.</p><div class="receipt-actions no-print"><button id="receipt-print">Gerar / salvar manifestação em PDF</button><button id="receipt-email">Abrir e-mail para envio →</button></div><p class="receipt-note no-print">Depois de salvar o PDF, anexe-o ao e-mail antes de enviar.</p></section>`);
+  root.innerHTML=receiptShell(`<section class="receipt-card"><p class="receipt-eyebrow">MANIFESTAÇÃO FINALIZADA</p><h1 class="receipt-title">Seu comprovante está pronto.</h1>${conflict}<div class="receipt-grid"><strong>Responsável informado</strong><span>${esc(participantName)}</span><strong>Vínculo declarado</strong><span>${esc(participantRole)}</span><strong>Unidade</strong><span>${esc(unit)}</span><strong>Protocolo</strong><code>${esc(receipt.protocolId)}</code><strong>Data e hora do registro</strong><span>${esc(finalizedAt)}</span><strong>Hash de integridade</strong><code>${esc(receipt.payloadHash)}</code></div>${items}<p class="receipt-note">Para os demais termos da minuta, não houve manifestações específicas.</p><div class="receipt-actions no-print"><button id="receipt-print">Gerar / salvar manifestação em PDF</button><button id="receipt-email">Abrir e-mail no navegador →</button></div><p class="receipt-note no-print">Depois de salvar o PDF, anexe-o ao e-mail antes de enviar.</p></section>`);
 
   document.getElementById('receipt-print')?.addEventListener('click',()=>window.print());
-  document.getElementById('receipt-email')?.addEventListener('click',()=>{
-    const subject=participant?`Manifestação sobre o Regimento Interno — Torre ${participant.tower} / Apto. ${participant.apartment}`:'Manifestação sobre o Regimento Interno — Torres de Olinda';
-    const body=`Prezados,\n\nSeguem, em anexo, minhas considerações a respeito da proposta de Regimento Interno do Condomínio Torres de Olinda.\n\nAtenciosamente,\n${participantName}${participant?`\nTorre ${participant.tower} — Apartamento ${participant.apartment}`:''}`;
-    window.location.href=`mailto:${OFFICE_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  });
+  document.getElementById('receipt-email')?.addEventListener('click',()=>openWebmailDialog(participant,participantName));
   return true;
 };
 
