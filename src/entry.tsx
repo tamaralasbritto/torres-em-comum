@@ -5,7 +5,8 @@ import './admin.css';
 import { AdminPanel } from './admin';
 
 const hash=window.location.hash;
-const isAdminRoute=hash==='#admin'||hash.includes('access_token=')||hash.includes('error_description=');
+const params=new URLSearchParams(window.location.search);
+const isAdminRoute=params.get('admin')==='1'||hash==='#admin'||hash.includes('access_token=')||hash.includes('error_description=');
 const isGlossaryRoute=hash==='#glossario';
 
 // The app has lightweight hash routes for admin and glossary. Reloading on a
