@@ -21,9 +21,8 @@ export function consumeAdminAuthCallback():AdminSession|null{
 export async function requestAdminMagicLink(email:string){
   const normalized=email.trim().toLowerCase();
   if(!normalized||!normalized.includes('@'))throw new Error('invalid_email');
-  const redirect=`${location.origin}${location.pathname}#admin`;
-  const response=await fetch(`${PROJECT_URL}/auth/v1/otp?redirect_to=${encodeURIComponent(redirect)}`,{
-    method:'POST',headers:{'content-type':'application/json','apikey':PUBLISHABLE_KEY},body:JSON.stringify({email:normalized,create_user:true})
+  const response=await fetch(`${PROJECT_URL}/functions/v1/validator-auth`,{
+    method:'POST',headers:{'content-type':'application/json','apikey':PUBLISHABLE_KEY},body:JSON.stringify({email:normalized})
   });
   if(!response.ok)throw new Error('magic_link_failed');
 }
