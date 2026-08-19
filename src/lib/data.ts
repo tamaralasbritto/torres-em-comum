@@ -4,8 +4,9 @@ export type ResidentRole = 'owner' | 'tenant';
 export type Participant = { name:string; tower:'A'|'B'|'C'|'D'; apartment:string; role:ResidentRole };
 export type SavedResponse = { choice:ManifestationChoice; comment?:string };
 export type Responses = Record<string,SavedResponse>;
-export type RemoteSession = { participantId:string; protocolId:string; resumeToken:string; status:'draft'|'finalized'|'conflicted'; lastSavedAt?:string };
-export type FinalReceipt = { protocolId:string; status:'finalized'|'conflicted'; finalizedAt:string; payloadHash:string; countsInPanel:boolean; conflict?:{code:string;message:string}|null };
+export type ParticipationStatus = 'draft'|'finalized'|'conflicted'|'superseded';
+export type RemoteSession = { participantId:string; protocolId:string; resumeToken:string; status:ParticipationStatus; lastSavedAt?:string };
+export type FinalReceipt = { protocolId:string; status:Exclude<ParticipationStatus,'draft'>; finalizedAt:string; payloadHash:string; countsInPanel:boolean; conflict?:{code:string;message:string}|null };
 export type PublicPanelDevice = {
   deviceId:string;
   responses:number|'5+';
