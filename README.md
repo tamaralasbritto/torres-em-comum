@@ -15,3 +15,5 @@ Projeto para organizar a leitura da minuta do Regimento Interno, registrar manif
 ## Stack inicial
 
 Vite + React + TypeScript. O MVP será preparado para persistência em Supabase/PostgreSQL, geração de PDF e posterior upload do documento assinado.
+
+<!-- CI retrigger: 2026-08-19 -->
