@@ -66,7 +66,7 @@ function ensureFinalDocument(){
   const printButton=[...review.querySelectorAll('button')].find(b=>/Imprimir|salvar PDF/i.test(b.textContent||''));
   if(printButton)printButton.textContent='Gerar / salvar manifestação em PDF';
   const emailButton=[...review.querySelectorAll('button')].find(b=>/Abrir e-mail|Enviar ao escritório/i.test(b.textContent||''));
-  if(emailButton)emailButton.textContent='Abrir e-mail no navegador →';
+  if(emailButton)emailButton.textContent='Abrir e-mail para envio';
 }
 
 function disablePublicResults(){
@@ -80,7 +80,7 @@ function disablePublicResults(){
   section.innerHTML=`<div class="mvp-results-placeholder"><p class="eyebrow">RESULTADOS</p><h2>Ainda não temos dados suficientes.</h2><p>Os resultados públicos serão disponibilizados quando houver volume mínimo de respostas para exibição com segurança e privacidade.</p></div>`;
 }
 
-function escapeHtml(value:string){return value.replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]||c))}
+function escapeHtml(value:string){return value.replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]||c))}
 
 addPrintStyles();
 const observer=new MutationObserver(()=>{ensureFinalDocument();disablePublicResults()});
