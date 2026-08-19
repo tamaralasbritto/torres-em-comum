@@ -10,7 +10,7 @@ const PARTICIPANT_KEY='torres-em-comum:participant';
 const RESPONSE_KEY='torres-em-comum:responses';
 const RECEIPT_KEY='torres-em-comum:final-receipt';
 
-const labels:Record<ManifestationChoice,string>={agree:'Concordo',change:'Quero alterar',exclude:'Quero excluir',observe:'Tenho uma observação'};
+const labels:Record<ManifestationChoice,string>={agree:'Concordo',change:'Quero alterar',exclude:'Quero excluir',observe:'Tenho uma observação',abstain:'Não quero me manifestar a respeito'};
 const typeLabel=(role:Participant['role'])=>role==='owner'?'Proprietário(a)':'Inquilino(a)';
 
 function readJson<T>(key:string):T|null{try{return JSON.parse(localStorage.getItem(key)||'null') as T|null}catch{return null}}
