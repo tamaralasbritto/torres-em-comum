@@ -18,6 +18,17 @@
     return { subject, body };
   };
 
+  const fullEmailText = (subject, body) => `Para: ${OFFICE_EMAIL}\nAssunto: ${subject}\n\n${body}`;
+
+  const copyEmailText = async (subject, body) => {
+    try {
+      await navigator.clipboard.writeText(fullEmailText(subject, body));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const ensureDialog = () => {
     let dialog = document.getElementById('webmail-dialog');
     if (dialog) return dialog;
@@ -29,7 +40,7 @@
       <form method="dialog" class="webmail-card">
         <p class="webmail-eyebrow">ENVIAR MANIFESTAÇÃO</p>
         <h2>Onde você quer abrir o e-mail?</h2>
-        <p class="webmail-copy">O destinatário, o assunto e o texto já vão preenchidos. Depois, é só anexar o PDF que você salvou.</p>
+        <p class="webmail-copy">O destinatário, o assunto e o texto já vão preenchidos. Como segurança, esses dados também serão copiados automaticamente. Se o seu provedor abrir uma mensagem vazia, basta colar e anexar o PDF.</p>
         <div class="webmail-options">
           <button type="button" data-webmail="gmail">Abrir no Gmail →</button>
           <button type="button" data-webmail="outlook">Abrir no Outlook / Hotmail →</button>
@@ -45,25 +56,25 @@
       if (!button) return;
       const { subject, body } = emailContent();
       const provider = button.dataset.webmail;
+      const status = dialog.querySelector('.webmail-status');
 
-      if (provider === 'gmail') {
-        const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(OFFICE_EMAIL)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      if (provider === 'gmail' || provider === 'outlook') {
+        const copied = await copyEmailText(subject, body);
+        if (status) status.textContent = copied
+          ? 'Dados do e-mail copiados. Se a nova mensagem abrir vazia, basta colar.'
+          : 'Não consegui copiar automaticamente, mas vou tentar abrir a mensagem preenchida.';
+
+        const url = provider === 'gmail'
+          ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(OFFICE_EMAIL)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+          : `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(OFFICE_EMAIL)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
         window.open(url, '_blank', 'noopener,noreferrer');
-        dialog.close();
-      } else if (provider === 'outlook') {
-        const url = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(OFFICE_EMAIL)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        window.open(url, '_blank', 'noopener,noreferrer');
-        dialog.close();
+        window.setTimeout(() => dialog.close(), 350);
       } else if (provider === 'copy') {
-        const full = `Para: ${OFFICE_EMAIL}\nAssunto: ${subject}\n\n${body}`;
-        try {
-          await navigator.clipboard.writeText(full);
-          const status = dialog.querySelector('.webmail-status');
-          if (status) status.textContent = 'Texto copiado.';
-        } catch {
-          const status = dialog.querySelector('.webmail-status');
-          if (status) status.textContent = 'Não foi possível copiar automaticamente.';
-        }
+        const copied = await copyEmailText(subject, body);
+        if (status) status.textContent = copied
+          ? 'Texto copiado.'
+          : 'Não foi possível copiar automaticamente.';
       }
     });
     return dialog;
