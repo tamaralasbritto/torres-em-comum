@@ -84,16 +84,14 @@ async function recoverParticipation(){
   try{
     const turnstileToken=await getTurnstileToken();
     const result=await recoveryApi({action:'recover',tower,apartment,recoveryCode,turnstileToken});
-    if(result.session?.status!=='draft'){
-      alert('Esta unidade já possui uma manifestação finalizada. As respostas estão preservadas, mas não podem mais ser editadas.');
-      return;
-    }
     const responses=Object.fromEntries((result.responses||[]).map((r:any)=>[r.device_id,{choice:r.choice,comment:r.comment||undefined}]));
     localStorage.setItem(SESSION_KEY,JSON.stringify(result.session));
     localStorage.setItem(PARTICIPANT_KEY,JSON.stringify(result.participant));
     localStorage.setItem(RESPONSE_KEY,JSON.stringify(responses));
-    localStorage.removeItem(RECEIPT_KEY);
-    alert('Participação recuperada. Suas respostas serão carregadas agora.');
+    if(result.receipt)localStorage.setItem(RECEIPT_KEY,JSON.stringify(result.receipt));
+    else localStorage.removeItem(RECEIPT_KEY);
+    if(result.session?.status==='draft')alert('Participação recuperada. Suas respostas serão carregadas agora.');
+    else alert('Manifestação finalizada recuperada. Suas respostas e comprovante serão carregados agora.');
     window.location.reload();
   }catch(e){
     const code=String((e as Error)?.message||'');
