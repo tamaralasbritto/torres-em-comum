@@ -37,7 +37,9 @@ function setupMobileNav(){
   header.insertBefore(toggle,nav);
 }
 
-const observer=new MutationObserver(setupMobileNav);
-observer.observe(document.documentElement,{childList:true,subtree:true});
+const mobileNavObserver=new MutationObserver(setupMobileNav);
+mobileNavObserver.observe(document.documentElement,{childList:true,subtree:true});
 window.addEventListener('load',setupMobileNav);
 setupMobileNav();
+
+export {};
