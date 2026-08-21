@@ -1,0 +1,12 @@
+.mobileNavToggle{display:none}
+@media(max-width:760px){
+  .appTop{position:sticky;top:0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;padding:12px 18px;gap:10px;z-index:80}
+  .appTop .brandButton{justify-self:start}
+  .mobileNavToggle{display:inline-flex;align-items:center;gap:8px;border:1px solid #171714;background:#f7f3e7;padding:9px 12px;font:inherit;font-weight:700;cursor:pointer}
+  .mobileNavToggle span[aria-hidden="true"]{font-size:20px;line-height:1}
+  .appTop .tabs{display:none;grid-column:1/-1;width:100%;overflow:visible;flex-wrap:nowrap;border-top:1px solid #171714;margin-top:2px;padding-top:8px;background:#f7f3e7}
+  .appTop.mobile-nav-open .tabs{display:flex;flex-direction:column;gap:4px}
+  .appTop .tabs button{width:100%;text-align:left;white-space:normal;border:1px solid transparent;border-bottom:1px solid #d7d0c0;padding:12px 10px}
+  .appTop .tabs button:hover,.appTop .tabs button.active{border:1px solid #171714;background:#fffaf0}
+  .appTop .tabs button.mobileSummaryLink{background:#f4c94d;border:1px solid #171714;font-weight:800;margin-top:4px}
+}
