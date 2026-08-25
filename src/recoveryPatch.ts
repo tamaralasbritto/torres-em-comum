@@ -1,10 +1,14 @@
+import { devices } from './data';
 import { getTurnstileToken } from './lib/turnstile';
 
 const RECOVERY_API='https://hzcpbbnjoeyyfwxdsbxt.supabase.co/functions/v1/participation-recovery';
+const PARTICIPATION_API='https://hzcpbbnjoeyyfwxdsbxt.supabase.co/functions/v1/participation';
 const SESSION_KEY='torres-em-comum:remote-session';
 const PARTICIPANT_KEY='torres-em-comum:participant';
 const RESPONSE_KEY='torres-em-comum:responses';
 const RECEIPT_KEY='torres-em-comum:final-receipt';
+const RECOVERED_KEY='torres-em-comum:just-recovered';
+const DEVICE_MANIFEST=[...new Set(devices.map(device=>device.id))].sort();
 
 type Session={participantId:string;protocolId:string;resumeToken:string;status:string;lastSavedAt?:string};
 
@@ -18,6 +22,23 @@ async function recoveryApi(payload:Record<string,unknown>){
 
 function loadSession():Session|null{
   try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null')}catch{return null}
+}
+
+function loadResponses(){
+  try{return JSON.parse(localStorage.getItem(RESPONSE_KEY)||'{}') as Record<string,{choice:string;comment?:string}>}catch{return {}}
+}
+
+function serializeResponses(value:Record<string,{choice:string;comment?:string}>){
+  return Object.entries(value).map(([device_id,response])=>({device_id,choice:response.choice,comment:response.comment?.trim()||null}));
+}
+
+function flushDraftOnExit(){
+  const session=loadSession();
+  if(!session||session.status!=='draft')return;
+  const payload=JSON.stringify({action:'save',participantId:session.participantId,resumeToken:session.resumeToken,deviceManifest:DEVICE_MANIFEST,responses:serializeResponses(loadResponses())});
+  try{
+    fetch(PARTICIPATION_API,{method:'POST',headers:{'content-type':'application/json'},body:payload,keepalive:true}).catch(()=>{});
+  }catch{}
 }
 
 function makeModal(code:string,session:Session){
@@ -88,9 +109,10 @@ async function recoverParticipation(){
     localStorage.setItem(SESSION_KEY,JSON.stringify(result.session));
     localStorage.setItem(PARTICIPANT_KEY,JSON.stringify(result.participant));
     localStorage.setItem(RESPONSE_KEY,JSON.stringify(responses));
+    localStorage.setItem(RECOVERED_KEY,result.session?.participantId||'1');
     if(result.receipt)localStorage.setItem(RECEIPT_KEY,JSON.stringify(result.receipt));
     else localStorage.removeItem(RECEIPT_KEY);
-    if(result.session?.status==='draft')alert('Participação recuperada. Suas respostas serão carregadas agora.');
+    if(result.session?.status==='draft')alert(`Participação recuperada. ${Object.keys(responses).length} resposta(s) salva(s) foram carregadas do servidor.`);
     else alert('Manifestação finalizada recuperada. Suas respostas e comprovante serão carregados agora.');
     window.location.reload();
   }catch(e){
@@ -115,6 +137,11 @@ function ensureRecoveryButton(){
   start.insertAdjacentElement('afterend',button);
 }
 
+if(localStorage.getItem(RECOVERED_KEY)){
+  window.setTimeout(()=>localStorage.removeItem(RECOVERED_KEY),5000);
+}
+window.addEventListener('pagehide',flushDraftOnExit);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushDraftOnExit()});
 const observer=new MutationObserver(()=>{ensureRecoveryButton();void maybeIssueRecoveryCode()});
 observer.observe(document.documentElement,{childList:true,subtree:true});
 window.addEventListener('load',()=>{ensureRecoveryButton();void maybeIssueRecoveryCode()});
